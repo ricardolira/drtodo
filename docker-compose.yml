@@ -1,0 +1,41 @@
+version: '3'
+
+services:
+  frontend:
+    build:
+      dockerfile: frontend/Dockerfile
+      context: .
+    stdin_open: true
+    working_dir: /frontend
+    volumes:
+      - ./frontend:/frontend
+    ports:
+      - "3000:3000"
+  backend:
+    user: $UID:$GID
+    build:
+      dockerfile: backend/Dockerfile
+      context: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/backend:Z
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py runserver 0.0.0.0:8000"
+    environment:
+      - DB_HOST=db
+      - DB_NAME=app
+      - DB_USER=postgres
+      - DB_PASSWORD=supersecretpassword
+    depends_on:
+      - db
+      - frontend
+  db:
+    image: postgres:10-alpine
+    environment:
+      - POSTGRES_DB=app
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=supersecretpassword
+    ports:
+      - "6544:5432"
